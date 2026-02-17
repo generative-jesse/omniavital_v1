@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import logoMark from "@/assets/logo-mark.png";
 
 const navLinks = [
   { label: "Shop", href: "#ritual" },
@@ -32,12 +33,10 @@ const Navbar = () => {
             : "bg-transparent"
         }`}
       >
-        <div className="container mx-auto flex items-center justify-between px-6 py-5">
-          <Link to="/" className="group flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-xs font-black text-accent-foreground">OV</span>
-            </div>
-            <span className="text-lg font-bold tracking-[0.15em] uppercase text-foreground group-hover:text-gradient transition-all duration-300">
+        <div className="container mx-auto flex items-center justify-between px-6 py-4">
+          <Link to="/" className="group flex items-center gap-3">
+            <img src={logoMark} alt="OmniaVital" className="w-9 h-9 rounded-lg object-cover" />
+            <span className="text-lg font-bold tracking-[0.15em] uppercase text-foreground">
               OmniaVital
             </span>
           </Link>
@@ -83,6 +82,7 @@ const Navbar = () => {
             >
               <X size={24} />
             </button>
+            <img src={logoMark} alt="OmniaVital" className="w-16 h-16 rounded-xl mb-10" />
             <div className="flex flex-col items-center gap-8">
               {navLinks.map((link, i) => (
                 <motion.a
@@ -91,7 +91,7 @@ const Navbar = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08 }}
-                  className="text-2xl font-light tracking-[0.3em] uppercase text-foreground hover:text-gradient transition-all duration-300"
+                  className="text-2xl font-light tracking-[0.3em] uppercase text-foreground hover:text-primary transition-colors duration-300"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}

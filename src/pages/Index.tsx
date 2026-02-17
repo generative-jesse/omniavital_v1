@@ -4,6 +4,7 @@ import RitualGrid from "@/components/RitualGrid";
 import ScienceSection from "@/components/ScienceSection";
 import CommunitySection from "@/components/CommunitySection";
 import VoiceAgent from "@/components/VoiceAgent";
+import logoMark from "@/assets/logo-mark.png";
 
 const Index = () => {
   return (
@@ -18,10 +19,8 @@ const Index = () => {
 
       <footer className="py-12 px-6 border-t border-border">
         <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-[8px] font-black text-accent-foreground">OV</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <img src={logoMark} alt="OmniaVital" className="w-7 h-7 rounded-md" />
             <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground font-medium">
               © 2026 OmniaVital
             </p>
