@@ -32,6 +32,47 @@ export type Database = {
         }
         Relationships: []
       }
+      forum_posts: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_posts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           bio_availability_text: string | null
@@ -76,6 +117,112 @@ export type Database = {
           tagline?: string
         }
         Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          ov_tag: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          ov_tag?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          ov_tag?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          id: string
+          product_id: string | null
+          purchased_at: string
+          quantity: number
+          status: string
+          total: number
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          product_id?: string | null
+          purchased_at?: string
+          quantity?: number
+          status?: string
+          total: number
+          user_id: string
+        }
+        Update: {
+          id?: string
+          product_id?: string | null
+          purchased_at?: string
+          quantity?: number
+          status?: string
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ritual_logs: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          logged_date: string
+          notes: string | null
+          product_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          logged_date?: string
+          notes?: string | null
+          product_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          logged_date?: string
+          notes?: string | null
+          product_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ritual_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
