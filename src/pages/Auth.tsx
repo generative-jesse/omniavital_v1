@@ -25,7 +25,7 @@ const Auth = () => {
         if (error) throw error;
         navigate("/dashboard");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -34,6 +34,25 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+
+        if (data.session) {
+          toast({
+            title: "Account created",
+            description: "You're signed in and ready to go.",
+          });
+          navigate("/dashboard");
+          return;
+        }
+
+        if (data.user?.identities && data.user.identities.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "Account already exists",
+            description: "Please sign in instead, or reset your password.",
+          });
+          return;
+        }
+
         toast({
           title: "Check your email",
           description: "We sent you a confirmation link to verify your account.",
