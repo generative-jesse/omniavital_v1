@@ -1,36 +1,34 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import productMorning from "@/assets/product-morning.jpg";
 import productFocus from "@/assets/product-focus.jpg";
 import productEvening from "@/assets/product-evening.jpg";
 
-const rituals = [
-  {
-    title: "The Morning Routine",
-    tagline: "Organic Protein + Multi — Start sharp, stay sustained.",
-    slug: "morning-routine",
-    category: "morning",
-    image: productMorning,
-  },
-  {
-    title: "The Focus Window",
-    tagline: "Nootropic Complex — Unlock deep, effortless concentration.",
-    slug: "focus-window",
-    category: "focus",
-    image: productFocus,
-  },
-  {
-    title: "The Evening Recovery",
-    tagline: "Magnesium + Adaptogens — Rest, recover, rebuild.",
-    slug: "evening-recovery",
-    category: "evening",
-    image: productEvening,
-  },
-];
+export const productImages: Record<string, string> = {
+  "morning-routine": productMorning,
+  "focus-window": productFocus,
+  "evening-recovery": productEvening,
+};
+
+const order = ["morning-routine", "focus-window", "evening-recovery"];
 
 const RitualGrid = () => {
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("slug, name, tagline, category, price");
+      if (error) throw error;
+      return [...data].sort((a, b) => order.indexOf(a.slug) - order.indexOf(b.slug));
+    },
+  });
+
   return (
-    <section id="ritual" className="py-24 md:py-32 px-6">
+    <section id="ritual" className="py-24 md:py-32 px-6 scroll-mt-20">
       <div className="container mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -45,50 +43,57 @@ const RitualGrid = () => {
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground">
             Your Daily Protocol
           </h2>
+          <p className="mt-4 text-muted-foreground font-light max-w-xl mx-auto">
+            Three formulas, timed to the rhythm of your day. Built to be taken together.
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {rituals.map((ritual, i) => (
+          {isLoading &&
+            order.map((slug) => (
+              <div key={slug} className="rounded-xl border border-border bg-card min-h-[440px] animate-pulse" />
+            ))}
+
+          {products?.map((product, i) => (
             <motion.div
-              key={ritual.slug}
+              key={product.slug}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: i * 0.15 }}
+              transition={{ duration: 0.6, delay: i * 0.12 }}
             >
               <Link
-                to={`/product/${ritual.slug}`}
-                className="group block relative overflow-hidden bg-card border border-border rounded-xl h-full min-h-[420px] flex flex-col hover:border-primary/30 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5"
+                to={`/product/${product.slug}`}
+                className="group relative flex h-full min-h-[440px] flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-500 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
               >
-                {/* Product image */}
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src={ritual.image}
-                    alt={ritual.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    src={productImages[product.slug]}
+                    alt={product.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
-                  <div className="absolute top-4 right-4 text-[10px] tracking-[0.2em] uppercase text-muted-foreground px-3 py-1 rounded-full glass-light">
-                    {ritual.category}
+                  <div className="absolute top-4 right-4 glass-light rounded-full px-3 py-1 text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                    {product.category}
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-6 flex flex-col flex-1 justify-end">
-                  <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
-                    {ritual.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">
-                    {ritual.tagline}
+                <div className="flex flex-1 flex-col justify-end p-6">
+                  <div className="mb-2 flex items-baseline justify-between gap-3">
+                    <h3 className="text-xl font-semibold text-foreground transition-colors duration-300 group-hover:text-primary">
+                      {product.name}
+                    </h3>
+                    <span className="shrink-0 text-sm font-semibold text-foreground">
+                      ${Number(product.price).toFixed(0)}
+                    </span>
+                  </div>
+                  <p className="mb-5 text-sm font-light leading-relaxed text-muted-foreground">
+                    {product.tagline}
                   </p>
-                  <span className="text-xs font-medium tracking-[0.2em] uppercase text-primary flex items-center gap-2">
+                  <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-primary">
                     Discover
-                    <motion.span
-                      className="inline-block"
-                      whileHover={{ x: 4 }}
-                    >
-                      →
-                    </motion.span>
+                    <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
                 </div>
               </Link>
