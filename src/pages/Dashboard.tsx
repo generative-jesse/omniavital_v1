@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { User, ShoppingBag, CalendarDays, MessageSquare, BotMessageSquare, LogOut, Flame } from "lucide-react";
+import { LayoutDashboard, User, ShoppingBag, CalendarDays, MessageSquare, BotMessageSquare, LogOut, Flame, Store } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import logoMark from "@/assets/logo-mark.png";
 
+import OverviewTab from "@/components/dashboard/OverviewTab";
 import ProfileTab from "@/components/dashboard/ProfileTab";
 import PurchasesTab from "@/components/dashboard/PurchasesTab";
 import CalendarTab from "@/components/dashboard/CalendarTab";
@@ -13,42 +14,41 @@ import CommunityTab from "@/components/dashboard/CommunityTab";
 import CoachTab from "@/components/dashboard/CoachTab";
 
 const tabs = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "purchases", label: "Purchases", icon: ShoppingBag },
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "calendar", label: "Ritual Calendar", icon: CalendarDays },
+  { id: "purchases", label: "Purchases", icon: ShoppingBag },
   { id: "community", label: "Community", icon: MessageSquare },
   { id: "coach", label: "AI Coach", icon: BotMessageSquare },
+  { id: "profile", label: "Profile", icon: User },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState<TabId>("profile");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
   const { user, signOut } = useAuth();
   const [firstName, setFirstName] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     if (!user) return;
-    // Fetch profile name
     supabase
       .from("profiles")
       .select("first_name")
       .eq("user_id", user.id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => setFirstName(data?.first_name || null));
 
-    // Calculate streak
     supabase
       .from("ritual_logs")
       .select("logged_date, completed")
       .eq("user_id", user.id)
       .eq("completed", true)
       .order("logged_date", { ascending: false })
-      .limit(90)
+      .limit(200)
       .then(({ data }) => {
         if (!data) return;
-        const uniqueDates = [...new Set(data.map(l => l.logged_date))].sort().reverse();
+        const uniqueDates = [...new Set(data.map((l) => l.logged_date))].sort().reverse();
         let s = 0;
         for (let i = 0; i < uniqueDates.length; i++) {
           const expected = new Date();
@@ -62,6 +62,7 @@ const Dashboard = () => {
 
   const renderTab = () => {
     switch (activeTab) {
+      case "overview": return <OverviewTab streak={streak} onNavigate={setActiveTab} />;
       case "profile": return <ProfileTab />;
       case "purchases": return <PurchasesTab />;
       case "calendar": return <CalendarTab />;
@@ -79,15 +80,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border">
         <div className="container mx-auto flex items-center justify-between px-6 py-3">
           <Link to="/" className="flex items-center gap-3">
-            <img src={logoMark} alt="OmniaVital" className="w-8 h-8 rounded-lg" />
+            <img src={logoMark} alt="OmniaVital logo" width={32} height={32} className="w-8 h-8 object-contain" />
             <span className="text-sm font-bold tracking-[0.15em] uppercase text-foreground">OmniaVital</span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             {streak > 0 && (
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Flame size={14} className="text-orange-400" />
@@ -95,6 +95,13 @@ const Dashboard = () => {
                 <span>day streak</span>
               </div>
             )}
+            <Link
+              to="/#ritual"
+              className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors tracking-widest uppercase"
+            >
+              <Store size={14} />
+              Shop
+            </Link>
             <button
               onClick={signOut}
               className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors tracking-widest uppercase"
@@ -106,27 +113,20 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <div className="pt-20 pb-8">
-        {/* Welcome banner */}
+      <div className="pt-20 pb-16">
         <div className="container mx-auto px-4 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-foreground"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-foreground">
             <h1 className="text-2xl font-bold tracking-wide">
               {greeting()}{firstName ? `, ${firstName}` : ""}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {streak > 0
                 ? `You're on a ${streak}-day streak. Keep building.`
-                : "Start your ritual today to build momentum."
-              }
+                : "Start your ritual today to build momentum."}
             </p>
           </motion.div>
         </div>
 
-        {/* Tab nav */}
         <div className="container mx-auto px-4 mb-8">
           <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-none">
             {tabs.map((tab) => {
@@ -150,7 +150,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Tab content */}
         <div className="container mx-auto px-4">
           <motion.div
             key={activeTab}
