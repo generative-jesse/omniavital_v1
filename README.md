@@ -1,90 +1,46 @@
-# OmniaVital — Premium Performance Wellness
+# OmniaVital
 
-A luxury, bio-optimized supplement brand built with React, Tailwind CSS, and Lovable Cloud.
+Premium performance wellness. A direct-to-consumer supplement brand built around three daily rituals — Morning, Focus and Evening — with a full member portal for tracking adherence, purchases and community.
 
 ## Features
 
-- 🧬 Premium dark-luxe design with Performance Teal + Gold accent palette
-- 🎙️ ElevenLabs conversational voice agent for visitor conversion
-- 📦 Database-backed product catalog with 3 ritual products
-- 📧 Email capture for "The Collective" community
-- ✨ Framer Motion scroll-reveal animations throughout
-- 📱 Fully responsive, mobile-first design
+- Product catalog with detailed, database-backed product pages
+- Member accounts with email/password authentication
+- Member portal: profile with a public OV tag, purchase history, ritual calendar with streaks and achievement rings, community forum and an AI wellness coach
+- Conversational voice agent for visitor questions
+- Email capture for The Collective
+- Fully responsive, mobile-first dark-luxe interface
 
-## Tech Stack
+## Tech stack
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
-- **UI**: shadcn/ui, Framer Motion, Lucide Icons
-- **Backend**: Lovable Cloud (database, auth, edge functions)
-- **Voice AI**: ElevenLabs Conversational AI (WebRTC)
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS
+- **UI:** shadcn/ui, Framer Motion, Lucide icons
+- **Backend:** Postgres database, authentication, edge functions
+- **Voice AI:** ElevenLabs Conversational AI (WebRTC)
 
-## ElevenLabs Voice Agent
+## Local development
 
-The site includes a floating voice agent widget powered by ElevenLabs Conversational AI. It connects to a public agent via WebRTC for real-time voice conversations.
-
-### Agent ID
-
-```
-agent_5501kgzectw4ep69wjamch6xr2k7
-```
-
-### Client Tool Configuration
-
-The following JSON template can be attached as a client tool for the ElevenLabs agent to trigger client-side actions:
-
-```json
-{
-  "type": "client",
-  "name": "navigate_to_product",
-  "description": "Navigate the user to a specific product page when they express interest in a ritual product",
-  "expects_response": false,
-  "response_timeout_secs": 1,
-  "parameters": [
-    {
-      "name": "product_slug",
-      "type": "string",
-      "description": "The product slug to navigate to (morning-routine, focus-window, evening-recovery)"
-    }
-  ],
-  "dynamic_variables": {
-    "dynamic_variable_placeholders": {}
-  },
-  "assignments": [],
-  "disable_interruptions": false,
-  "force_pre_tool_speech": "auto",
-  "tool_call_sound": null,
-  "tool_call_sound_behavior": "auto",
-  "execution_mode": "immediate"
-}
-```
-
-### Adding Client Tools to the Agent
-
-1. Open the ElevenLabs dashboard and select the agent
-2. Navigate to **Tools** → **Add Tool** → **Client**
-3. Paste the JSON configuration above
-4. In your React code, handle the tool call via the `clientTools` option in `useConversation`:
-
-```tsx
-const conversation = useConversation({
-  clientTools: {
-    navigate_to_product: (params: { product_slug: string }) => {
-      window.location.href = `/product/${params.product_slug}`;
-      return "Navigated to product";
-    },
-  },
-});
-```
-
-## Development
-
-```sh
-git clone <YOUR_GIT_URL>
-cd <YOUR_PROJECT_NAME>
-npm i
+```bash
+npm install
 npm run dev
 ```
 
-## Deployment
+The app runs at `http://localhost:8080`.
 
-Open [Lovable](https://lovable.dev) and click **Share → Publish**.
+## Project structure
+
+```
+src/
+  assets/        brand and product imagery
+  components/    marketing sections, navigation, shared UI
+  components/dashboard/  member portal tabs
+  hooks/         auth and utility hooks
+  pages/         routed screens
+  integrations/  backend client and generated types
+supabase/
+  functions/     edge functions (wellness coach)
+```
+
+## License
+
+© 2026 OmniaVital. All rights reserved.
