@@ -29,14 +29,14 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/dashboard");
+        navigate(afterAuth);
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { full_name: firstName },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: window.location.origin + afterAuth,
           },
         });
         if (error) throw error;
@@ -46,7 +46,7 @@ const Auth = () => {
             title: "Account created",
             description: "You're signed in and ready to go.",
           });
-          navigate("/dashboard");
+          navigate(afterAuth);
           return;
         }
 
