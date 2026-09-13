@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,13 @@ const Auth = () => {
   const [firstName, setFirstName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { toast } = useToast();
+
+  // Same-origin relative path only.
+  const rawNext = params.get("next") ?? "";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "";
+  const afterAuth = next || "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,14 +29,14 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/dashboard");
+        navigate(afterAuth);
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { full_name: firstName },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: window.location.origin + afterAuth,
           },
         });
         if (error) throw error;
@@ -40,7 +46,7 @@ const Auth = () => {
             title: "Account created",
             description: "You're signed in and ready to go.",
           });
-          navigate("/dashboard");
+          navigate(afterAuth);
           return;
         }
 
