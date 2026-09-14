@@ -175,16 +175,24 @@ var log_ritual_default = defineTool5({
       return { content: [{ type: "text", text: `No product with slug "${product_slug}".` }], isError: true };
     }
     const date = logged_date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-    const { data, error } = await supabase.from("ritual_logs").insert({
-      user_id: ctx.getUserId(),
-      product_id: product.id,
-      logged_date: date,
-      completed,
-      notes: notes ?? null
-    }).select().maybeSingle();
+    const { data, error } = await supabase.from("ritual_logs").upsert(
+      {
+        user_id: ctx.getUserId(),
+        product_id: product.id,
+        logged_date: date,
+        completed,
+        notes: notes ?? null
+      },
+      { onConflict: "user_id,product_id,logged_date" }
+    ).select().maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
-      content: [{ type: "text", text: `Logged ${product.name} for ${date}.` }],
+      content: [
+        {
+          type: "text",
+          text: `Logged ${product.name} as ${completed ? "taken" : "skipped"} for ${date}. It now shows on the member's ritual calendar.`
+        }
+      ],
       structuredContent: { log: data }
     };
   }
@@ -286,13 +294,247 @@ var create_community_post_default = defineTool8({
   }
 });
 
+// src/lib/mcp/tools/log-diet.ts
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@2.0.4";
+import { z as z6 } from "npm:zod@^3.25.76";
+var log_diet_default = defineTool9({
+  name: "log_diet",
+  title: "Log food / diet",
+  description: "Log what the member ate. Take their messy, natural description of a meal, extract the individual food items, and estimate calories and macros before calling this. Always pass the member's original wording in raw_text.",
+  inputSchema: {
+    raw_text: z6.string().trim().describe("The member's original description of what they ate."),
+    meal: z6.string().trim().optional().describe("breakfast, lunch, dinner, snack or other. Infer from context or time."),
+    items: z6.array(
+      z6.object({
+        name: z6.string().describe("Food item, e.g. 'grilled chicken breast'."),
+        quantity: z6.string().optional().describe("Portion, e.g. '6 oz' or '1 cup'."),
+        calories: z6.number().optional(),
+        protein_g: z6.number().optional(),
+        carbs_g: z6.number().optional(),
+        fat_g: z6.number().optional()
+      })
+    ).optional().describe("Cleaned, itemised breakdown of the meal with per-item estimates."),
+    calories: z6.number().optional().describe("Total estimated calories for the meal."),
+    protein_g: z6.number().optional().describe("Total estimated protein in grams."),
+    carbs_g: z6.number().optional().describe("Total estimated carbohydrates in grams."),
+    fat_g: z6.number().optional().describe("Total estimated fat in grams."),
+    logged_date: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Date in YYYY-MM-DD. Defaults to today.")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const items = input.items ?? [];
+    const sum = (key) => {
+      const total = items.reduce((acc, i) => acc + (Number(i[key]) || 0), 0);
+      return total > 0 ? total : void 0;
+    };
+    const supabase = supabaseForUser(ctx);
+    const row = {
+      user_id: ctx.getUserId(),
+      logged_date: input.logged_date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+      meal: input.meal?.toLowerCase() ?? "other",
+      raw_text: input.raw_text,
+      items,
+      calories: Math.round(input.calories ?? sum("calories") ?? 0) || null,
+      protein_g: input.protein_g ?? sum("protein_g") ?? null,
+      carbs_g: input.carbs_g ?? sum("carbs_g") ?? null,
+      fat_g: input.fat_g ?? sum("fat_g") ?? null,
+      source: "agent"
+    };
+    const { data, error } = await supabase.from("diet_logs").insert(row).select().maybeSingle();
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Logged ${row.meal} for ${row.logged_date}${row.calories ? ` (~${row.calories} kcal)` : ""}. It now appears on the member's dashboard.`
+        }
+      ],
+      structuredContent: { diet_log: data }
+    };
+  }
+});
+
+// src/lib/mcp/tools/log-mood.ts
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@2.0.4";
+import { z as z7 } from "npm:zod@^3.25.76";
+var log_mood_default = defineTool10({
+  name: "log_mood",
+  title: "Log mood",
+  description: "Log how the member is feeling. Summarise their message into a short mood label, estimate a 1-10 score and energy level, pull out a few tags, and keep their original words in raw_text.",
+  inputSchema: {
+    mood: z7.string().trim().describe("Short mood label, e.g. 'focused', 'anxious', 'calm'."),
+    raw_text: z7.string().trim().optional().describe("The member's original words."),
+    score: z7.number().optional().describe("Overall mood 1 (worst) to 10 (best)."),
+    energy: z7.number().optional().describe("Energy level 1 (depleted) to 10 (peak)."),
+    tags: z7.array(z7.string()).optional().describe("Short themes, e.g. ['work stress','poor sleep']."),
+    logged_date: z7.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Date in YYYY-MM-DD. Defaults to today.")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const clamp = (n) => typeof n === "number" ? Math.max(1, Math.min(10, Math.round(n))) : null;
+    const supabase = supabaseForUser(ctx);
+    const row = {
+      user_id: ctx.getUserId(),
+      logged_date: input.logged_date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+      mood: input.mood,
+      raw_text: input.raw_text ?? null,
+      score: clamp(input.score),
+      energy: clamp(input.energy),
+      tags: (input.tags ?? []).slice(0, 8),
+      source: "agent"
+    };
+    const { data, error } = await supabase.from("mood_logs").insert(row).select().maybeSingle();
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    return {
+      content: [{ type: "text", text: `Logged mood "${row.mood}" for ${row.logged_date}.` }],
+      structuredContent: { mood_log: data }
+    };
+  }
+});
+
+// src/lib/mcp/tools/add-journal-entry.ts
+import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@2.0.4";
+import { z as z8 } from "npm:zod@^3.25.76";
+var add_journal_entry_default = defineTool11({
+  name: "add_journal_entry",
+  title: "Add journal entry",
+  description: "Save a dated journal entry for the signed-in member. Use for reflections, wins, symptoms or anything they want written down.",
+  inputSchema: {
+    body: z8.string().trim().describe("The journal entry text, in the member's voice."),
+    title: z8.string().trim().optional().describe("Short title for the entry."),
+    tags: z8.array(z8.string()).optional().describe("Short themes for the entry."),
+    logged_date: z8.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Date in YYYY-MM-DD. Defaults to today.")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
+    const row = {
+      user_id: ctx.getUserId(),
+      logged_date: input.logged_date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+      title: input.title ?? null,
+      body: input.body,
+      tags: (input.tags ?? []).slice(0, 8),
+      source: "agent"
+    };
+    const { data, error } = await supabase.from("journal_entries").insert(row).select().maybeSingle();
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    return {
+      content: [{ type: "text", text: `Journal entry saved for ${row.logged_date}.` }],
+      structuredContent: { journal_entry: data }
+    };
+  }
+});
+
+// src/lib/mcp/tools/get-daily-log.ts
+import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@2.0.4";
+import { z as z9 } from "npm:zod@^3.25.76";
+var get_daily_log_default = defineTool12({
+  name: "get_daily_log",
+  title: "Get a day's health log",
+  description: "Read everything the signed-in member has logged for a date or date range: rituals taken, meals with nutrition, moods and journal entries. Call this before prompting them, so you only ask for what is missing.",
+  inputSchema: {
+    start_date: z9.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Start date YYYY-MM-DD. Defaults to today."),
+    end_date: z9.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("End date YYYY-MM-DD. Defaults to start_date.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ start_date, end_date }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
+    const uid = ctx.getUserId();
+    const start = start_date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const end = end_date ?? start;
+    const range = (q) => q.eq("user_id", uid).gte("logged_date", start).lte("logged_date", end);
+    const [rituals, diet, mood, journal] = await Promise.all([
+      range(supabase.from("ritual_logs").select("logged_date, completed, notes, products(name, category)")),
+      range(supabase.from("diet_logs").select("logged_date, logged_at, meal, raw_text, items, calories, protein_g, carbs_g, fat_g")),
+      range(supabase.from("mood_logs").select("logged_date, logged_at, mood, score, energy, tags, raw_text")),
+      range(supabase.from("journal_entries").select("logged_date, logged_at, title, body, tags"))
+    ]);
+    const firstError = [rituals, diet, mood, journal].find((r) => r.error)?.error;
+    if (firstError) return { content: [{ type: "text", text: firstError.message }], isError: true };
+    const meals = diet.data ?? [];
+    const result = {
+      range: { start, end },
+      rituals: rituals.data ?? [],
+      diet: meals,
+      total_calories: meals.reduce((a, m) => a + (m.calories ?? 0), 0),
+      mood: mood.data ?? [],
+      journal: journal.data ?? [],
+      missing: {
+        diet: meals.length === 0,
+        mood: (mood.data ?? []).length === 0,
+        rituals: (rituals.data ?? []).length === 0
+      }
+    };
+    return {
+      content: [{ type: "text", text: JSON.stringify(result) }],
+      structuredContent: result
+    };
+  }
+});
+
+// src/lib/mcp/tools/set-checkin-reminder.ts
+import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@2.0.4";
+import { z as z10 } from "npm:zod@^3.25.76";
+var set_checkin_reminder_default = defineTool13({
+  name: "set_checkin_reminder",
+  title: "Schedule a check-in",
+  description: "Schedule a check-in so the member is prompted to capture their diet, mood and rituals later. Offer this at the end of a logging conversation. The reminder appears on their dashboard.",
+  inputSchema: {
+    remind_at: z10.string().trim().describe("When to check in, as an ISO 8601 timestamp, e.g. 2026-09-15T18:00:00Z."),
+    kind: z10.string().trim().optional().describe("daily, diet, mood, ritual or once."),
+    message: z10.string().trim().optional().describe("What to ask the member when checking in.")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  handler: async ({ remind_at, kind, message }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const when = new Date(remind_at);
+    if (Number.isNaN(when.getTime())) {
+      return { content: [{ type: "text", text: `"${remind_at}" is not a valid timestamp.` }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
+    const { data, error } = await supabase.from("checkin_reminders").insert({
+      user_id: ctx.getUserId(),
+      kind: kind?.toLowerCase() ?? "daily",
+      remind_at: when.toISOString(),
+      message: message ?? "Time to capture today's rituals, diet and mood."
+    }).select().maybeSingle();
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    return {
+      content: [{ type: "text", text: `Check-in scheduled for ${when.toISOString()}.` }],
+      structuredContent: { reminder: data }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "lsladukwqwpwdxcnbvea";
 var mcp_default = defineMcp({
   name: "vitality-gateway",
   title: "Vitality Gateway",
-  version: "0.1.0",
-  instructions: "Tools for OmniaVital. Browse the ritual product catalog, and for the signed-in member: read their profile and orders, log daily rituals, check their streak and ring status, and read or post in The Collective community forum.",
+  version: "0.2.0",
+  instructions: [
+    "OmniaVital is a premium health and wellness platform. You act as the member's wellness companion.",
+    "Catalog: use list_products and get_product to browse and recommend the ritual product line (morning, focus, evening protocols). Recommend based on what the member logs.",
+    "Daily capture: log_ritual records supplements taken or skipped, log_diet records meals, log_mood records how they feel, add_journal_entry saves reflections. Everything appears instantly on the member's dashboard calendar.",
+    "Diet: the member will describe food loosely ('eggs and toast, coffee, big burrito at lunch'). Extract the individual items, estimate calories and protein/carbs/fat yourself, and pass both the itemised breakdown and their original wording to log_diet. Never ask them to do the maths.",
+    "Mood: turn their message into a short mood label plus a 1-10 score and energy estimate, keeping their own words in raw_text.",
+    "Be proactive: call get_daily_log first to see what's already captured today, then prompt only for what's missing \u2014 rituals, diet, mood. At the end of a check-in, offer set_checkin_reminder to schedule tomorrow's capture.",
+    "Also available: get_my_profile, list_my_purchases, get_ritual_streak, and The Collective community forum via list_community_posts and create_community_post."
+  ].join(" "),
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
@@ -304,6 +546,11 @@ var mcp_default = defineMcp({
     list_my_purchases_default,
     log_ritual_default,
     get_ritual_streak_default,
+    log_diet_default,
+    log_mood_default,
+    add_journal_entry_default,
+    get_daily_log_default,
+    set_checkin_reminder_default,
     list_community_posts_default,
     create_community_post_default
   ]

@@ -10,10 +10,94 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      checkin_reminders: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          kind: string
+          message: string | null
+          remind_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string | null
+          remind_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string | null
+          remind_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      diet_logs: {
+        Row: {
+          calories: number | null
+          carbs_g: number | null
+          created_at: string
+          fat_g: number | null
+          id: string
+          items: Json
+          logged_at: string
+          logged_date: string
+          meal: string
+          protein_g: number | null
+          raw_text: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calories?: number | null
+          carbs_g?: number | null
+          created_at?: string
+          fat_g?: number | null
+          id?: string
+          items?: Json
+          logged_at?: string
+          logged_date?: string
+          meal?: string
+          protein_g?: number | null
+          raw_text?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calories?: number | null
+          carbs_g?: number | null
+          created_at?: string
+          fat_g?: number | null
+          id?: string
+          items?: Json
+          logged_at?: string
+          logged_date?: string
+          meal?: string
+          protein_g?: number | null
+          raw_text?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_signups: {
         Row: {
           created_at: string
@@ -72,6 +156,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      journal_entries: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          logged_at: string
+          logged_date: string
+          source: string
+          tags: string[]
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          source?: string
+          tags?: string[]
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          source?: string
+          tags?: string[]
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mood_logs: {
+        Row: {
+          created_at: string
+          energy: number | null
+          id: string
+          logged_at: string
+          logged_date: string
+          mood: string
+          raw_text: string | null
+          score: number | null
+          source: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy?: number | null
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          mood: string
+          raw_text?: string | null
+          score?: number | null
+          source?: string
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy?: number | null
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          mood?: string
+          raw_text?: string | null
+          score?: number | null
+          source?: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       products: {
         Row: {
