@@ -7,6 +7,11 @@ import logRitual from "./tools/log-ritual";
 import getRitualStreak from "./tools/get-ritual-streak";
 import listCommunityPosts from "./tools/list-community-posts";
 import createCommunityPost from "./tools/create-community-post";
+import logDiet from "./tools/log-diet";
+import logMood from "./tools/log-mood";
+import addJournalEntry from "./tools/add-journal-entry";
+import getDailyLog from "./tools/get-daily-log";
+import setCheckinReminder from "./tools/set-checkin-reminder";
 
 const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
 

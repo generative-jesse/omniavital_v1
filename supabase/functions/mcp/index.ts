@@ -175,16 +175,24 @@ var log_ritual_default = defineTool5({
       return { content: [{ type: "text", text: `No product with slug "${product_slug}".` }], isError: true };
     }
     const date = logged_date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-    const { data, error } = await supabase.from("ritual_logs").insert({
-      user_id: ctx.getUserId(),
-      product_id: product.id,
-      logged_date: date,
-      completed,
-      notes: notes ?? null
-    }).select().maybeSingle();
+    const { data, error } = await supabase.from("ritual_logs").upsert(
+      {
+        user_id: ctx.getUserId(),
+        product_id: product.id,
+        logged_date: date,
+        completed,
+        notes: notes ?? null
+      },
+      { onConflict: "user_id,product_id,logged_date" }
+    ).select().maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
-      content: [{ type: "text", text: `Logged ${product.name} for ${date}.` }],
+      content: [
+        {
+          type: "text",
+          text: `Logged ${product.name} as ${completed ? "taken" : "skipped"} for ${date}. It now shows on the member's ritual calendar.`
+        }
+      ],
       structuredContent: { log: data }
     };
   }
