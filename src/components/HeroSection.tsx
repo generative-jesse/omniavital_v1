@@ -1,23 +1,49 @@
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
-  return (
-    <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
-      {/* Background image with subtle zoom */}
-      <motion.div
-        initial={{ scale: 1.1 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroBg})` }}
-      />
-      {/* Multi-layer gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background" />
-      <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-transparent to-background/60" />
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
 
-      <div className="relative z-10 text-center px-6 max-w-5xl">
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "22%"]);
+  const bgScale = useTransform(scrollYProgress, [0, 1], [1.08, reduce ? 1.08 : 1.18]);
+  const veil = useTransform(scrollYProgress, [0, 1], [0.25, 0.85]);
+  const contentY = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "-18%"]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+
+  return (
+    <section ref={ref} className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+      {/* Parallax background with soft focus */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.4, ease: "easeOut" }}
+        style={{ y: bgY, scale: bgScale, backgroundImage: `url(${heroBg})` }}
+        className="absolute inset-[-10%] bg-cover bg-center will-change-transform"
+      />
+      {/* Smoke / glass diffusion */}
+      <div className="absolute inset-0 backdrop-blur-[6px] backdrop-saturate-[0.85]" />
+      <motion.div style={{ opacity: veil }} className="absolute inset-0 bg-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/45 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-background/70" />
+      {/* Drifting smoke plumes */}
+      <motion.div
+        aria-hidden
+        animate={reduce ? undefined : { x: ["-6%", "6%", "-6%"], opacity: [0.5, 0.75, 0.5] }}
+        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute -left-1/4 top-1/4 h-[60vh] w-[80vw] rounded-full bg-primary/10 blur-[120px]"
+      />
+      <motion.div
+        aria-hidden
+        animate={reduce ? undefined : { x: ["5%", "-5%", "5%"], opacity: [0.35, 0.6, 0.35] }}
+        transition={{ duration: 32, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute -right-1/4 bottom-0 h-[55vh] w-[70vw] rounded-full bg-accent/10 blur-[140px]"
+      />
+
+      <motion.div style={{ y: contentY, opacity: contentOpacity }} className="relative z-10 text-center px-6 max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -58,7 +84,7 @@ const HeroSection = () => {
         >
           Explore The Ritual
         </motion.a>
-      </div>
+      </motion.div>
 
       {/* Scroll indicator */}
       <motion.div
