@@ -43,7 +43,7 @@ const HeroSection = () => {
         className="pointer-events-none absolute -right-1/4 bottom-0 h-[55vh] w-[70vw] rounded-full bg-accent/10 blur-[140px]"
       />
 
-      <div className="relative z-10 text-center px-6 max-w-5xl">
+      <motion.div style={{ y: contentY, opacity: contentOpacity }} className="relative z-10 text-center px-6 max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -84,7 +84,7 @@ const HeroSection = () => {
         >
           Explore The Ritual
         </motion.a>
-      </div>
+      </motion.div>
 
       {/* Scroll indicator */}
       <motion.div
