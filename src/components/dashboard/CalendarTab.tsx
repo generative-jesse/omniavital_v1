@@ -54,14 +54,12 @@ const CalendarTab = () => {
   const loadMonth = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const range = <T,>(q: T) => q as T;
     const [r, d, m, j] = await Promise.all([
       supabase.from("ritual_logs").select("id, logged_date, completed, product_id").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
       supabase.from("diet_logs").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
       supabase.from("mood_logs").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
       supabase.from("journal_entries").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
     ]);
-    void range;
     setLogs((r.data as RitualLog[]) || []);
     setOtherActivity(
       new Set([...(d.data || []), ...(m.data || []), ...(j.data || [])].map((x) => (x as { logged_date: string }).logged_date)),
