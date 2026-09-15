@@ -177,7 +177,7 @@ const CalendarTab = () => {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[auto_1fr]">
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="glass rounded-2xl p-2 sm:p-3 relative">
             {loading && (
               <Loader2 size={14} className="absolute right-4 top-4 animate-spin text-muted-foreground" />
@@ -191,14 +191,14 @@ const CalendarTab = () => {
               className={cn("p-2 pointer-events-auto")}
               modifiers={{ full: fullDays, partial: partialDays, logged: loggedOnly }}
               modifiersClassNames={{
-                full: "relative font-bold text-primary bg-primary/15 ring-1 ring-primary/30 after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-primary",
-                partial: "relative text-foreground after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-primary/50",
-                logged: "relative text-foreground after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-accent",
+                full: "relative font-bold text-primary bg-primary/15 ring-1 ring-primary/30 after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1.5 after:w-1.5 after:rounded-full after:bg-current",
+                partial: "relative font-medium text-primary/70 ring-1 ring-primary/15 after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1.5 after:w-1.5 after:rounded-full after:bg-current",
+                logged: "relative text-accent after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1.5 after:w-1.5 after:rounded-full after:bg-current",
               }}
             />
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 pb-2 pt-1 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Full ritual</span>
-              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-primary/50" />Partial</span>
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-primary/60" />Partial</span>
               <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-accent" />Diet / mood / journal</span>
             </div>
           </div>
