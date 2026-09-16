@@ -1,82 +1,20 @@
+# Dashboard, logging, and inventory redesign
 
+## What will change
+- Rework the signed-in shell into a premium navigation layout inspired by the supplied dashboard mock, replacing the crowded top tab row with clear desktop navigation and compact mobile navigation.
+- Rebuild the logging view around a clean calendar and a selected-day timeline, with unambiguous activity markers, visible log counts, clear ritual status, and better empty/loading/error states.
+- Connect purchases to inventory: each purchased bottle adds 30 servings, each completed ritual log consumes one serving, and remaining inventory is visible in the dashboard and purchase history.
+- Fix “Add to Ritual” permissions and feedback, then ensure the agent can read remaining inventory and warn or recommend a reorder when stock reaches zero.
+- Refresh the logo and typography to match the light, botanical monogram and restrained premium typography in the supplied reference.
 
-# OmniaVital — Premium Performance Wellness
+## Interaction details
+- Selecting a calendar day immediately shows every ritual, diet, mood, and journal entry for that date.
+- Calendar markers use teal and neutral status treatments only; the selected day will no longer use yellow.
+- Ritual rows show remaining servings and disable impossible intake logging when no purchased inventory remains, while preserving historical logs.
+- Mobile keeps the calendar, date summary, and entry actions reachable without horizontal overflow.
 
-A luxury, Apple-meets-Lululemon e-commerce frontend for a bio-optimized supplement brand, backed by Lovable Cloud (Supabase) for products and email capture.
-
----
-
-## 1. Brand Foundation & Design System
-
-- **Color palette**: Deep Black (#0A0A0A), Soft White (#F5F5F7), Performance Teal accent (~#2DD4BF or similar)
-- **Typography**: Inter font family with high-contrast sizing — oversized headlines, refined body text
-- **Spacing**: Generous whitespace throughout, cinematic proportions
-- **Install Framer Motion** for scroll-reveal animations and smooth transitions
-
----
-
-## 2. Navigation
-
-- Minimalist sticky top nav: **Shop · Science · Community · Account**
-- Transparent on hero, transitions to solid on scroll
-- Mobile: clean hamburger menu with full-screen overlay
-
----
-
-## 3. Hero Section
-
-- Full-viewport hero with a high-res lifestyle background image (gradient overlay for text legibility)
-- Bold headline: *"Optimal Life, Seamlessly Integrated."*
-- Sub-headline: *"Bio-optimized nutrition for the modern vanguard."*
-- Primary CTA button: "Explore The Ritual"
-- Subtle scroll-down indicator animation
-
----
-
-## 4. The Ritual — Bento Grid
-
-- A visually striking asymmetric grid with three cards:
-  - **The Morning Routine** — Organic Protein + Multi
-  - **The Focus Window** — Brain/Nootropics
-  - **The Evening Recovery** — Night-time Magnesium
-- Each card features a product image, ritual name, brief tagline, and a "Discover" link
-- Cards animate in on scroll with staggered fade-up effects
-- Hover states with subtle scale and shadow transitions
-
----
-
-## 5. Community CTA / Email Capture
-
-- Mid-page banner or sticky section: *"Join the Collective. Get 20% off your first yearly subscription."*
-- Premium-feeling email input — styled like a membership application (large, minimal, with a single "Apply" button)
-- Email submissions stored in Supabase `email_signups` table
-- Success state with an elegant confirmation message
-
----
-
-## 6. Product Detail Page (PDP)
-
-- Clean product page template pulling data from Supabase `products` table
-- Large, matte-finish product image area
-- Product name, price, and a short description
-- Tabbed info section: **Bio-Availability · Sourcing · Daily Ritual**
-- "Add to Ritual" CTA button (visual only for now, no cart backend)
-- Scroll-reveal animations on content sections
-
----
-
-## 7. Database Setup (Lovable Cloud)
-
-- **`products` table**: id, name, slug, category (morning/focus/evening), tagline, description, price, image_url, bio_availability_text, sourcing_text, daily_ritual_text
-- **`email_signups` table**: id, email, created_at
-- Seed with 3 products (one per ritual category)
-- RLS policies for public read on products, public insert on email_signups
-
----
-
-## 8. Mobile-First Polish
-
-- All layouts designed mobile-first, scaling up to desktop
-- Touch-friendly tap targets, smooth transitions
-- Community email capture feels like a native app flow on mobile
-
+## Technical details
+- Inventory is derived from purchase quantity × 30 minus completed ritual logs per product, avoiding duplicated stock state.
+- Existing row-level privacy remains intact; purchase creation is limited to the signed-in member.
+- MCP purchase and daily-log tools will return remaining servings and explicit reorder context.
+- The updated interface will be checked in authenticated desktop and mobile previews, plus build and security checks.
