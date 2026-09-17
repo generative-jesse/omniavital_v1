@@ -11,14 +11,14 @@ import DayLogPanel from "./DayLogPanel";
 
 const ritualSlots = [
   { id: "morning", label: "Morning Protocol", description: "Daily energy and resilience" },
-  { id: "focus", label: "Focus Complex", description: "Clarity for focused work" },
+  { id: "focus", label: "Focus Complex", description: "Clarity for focused wok" },
   { id: "evening", label: "Evening Recovery", description: "Recovery and restorative sleep" },
 ] as const;
 
 interface RitualLog {
   id: string;
   logged_date: string;
-  logged_at?: string;
+  created_at?: string
   completed: boolean;
   product_id: string | null;
   notes?: string | null;
@@ -61,7 +61,7 @@ const CalendarTab = () => {
     setError(null);
     const [productResult, ritualResult, dietResult, moodResult, journalResult, purchaseResult] = await Promise.all([
       supabase.from("products").select("id, category, name, slug"),
-      supabase.from("ritual_logs").select("id, logged_date, logged_at, completed, product_id, notes").eq("user_id", user.id).order("logged_date", { ascending: false }).limit(1000),
+      supabase.from("ritual_logs").select("id, logged_date, created_at, completed, product_id, notes").eq("user_id", user.id).order("logged_date", { ascending: false }).limit(1000),
       supabase.from("diet_logs").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
       supabase.from("mood_logs").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
       supabase.from("journal_entries").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
@@ -245,7 +245,7 @@ const CalendarTab = () => {
                     </Button>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">{product?.name ?? slot.label}</p>
-                       <p className="truncate text-xs text-muted-foreground">{completed ? `Taken${log?.logged_at ? ` at ${new Date(log.logged_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}` : remaining > 0 ? slot.description : "No inventory — add a bottle to continue"}</p>
+                       <p className="truncate text-xs text-muted-foreground">{completed ? `Taken${log?.created_at ? ` at ${new Date(log.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}` : remaining > 0 ? slot.description : "No inventory — add a bottle to continue"}</p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className={cn("text-sm font-semibold", remaining <= 5 ? "text-destructive" : "text-foreground")}>{remaining}</p>
