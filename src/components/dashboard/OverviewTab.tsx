@@ -27,7 +27,8 @@ const OverviewTab = ({ streak, onNavigate }: Props) => {
 
   useEffect(() => {
     if (!user) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     supabase
       .from("ritual_logs")
@@ -64,7 +65,7 @@ const OverviewTab = ({ streak, onNavigate }: Props) => {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {stats.map((s, i) => (
           <motion.div
             key={s.label}

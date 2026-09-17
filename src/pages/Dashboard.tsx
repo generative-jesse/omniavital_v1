@@ -1,7 +1,18 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { LayoutDashboard, User, ShoppingBag, CalendarDays, MessageSquare, BotMessageSquare, LogOut, Flame, Store } from "lucide-react";
+import {
+  BotMessageSquare,
+  CalendarDays,
+  Flame,
+  LayoutDashboard,
+  LogOut,
+  MessageSquare,
+  Package,
+  Settings,
+  ShoppingBag,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import logoMark from "@/assets/logo-mark.png";
@@ -14,49 +25,50 @@ import CommunityTab from "@/components/dashboard/CommunityTab";
 import CoachTab from "@/components/dashboard/CoachTab";
 
 const tabs = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "calendar", label: "Ritual Calendar", icon: CalendarDays },
-  { id: "purchases", label: "Purchases", icon: ShoppingBag },
-  { id: "community", label: "Community", icon: MessageSquare },
-  { id: "coach", label: "AI Coach", icon: BotMessageSquare },
-  { id: "profile", label: "Profile", icon: User },
+  { id: "overview", label: "Today", icon: LayoutDashboard },
+  { id: "calendar", label: "Logbook", icon: CalendarDays },
+  { id: "purchases", label: "Supply", icon: Package },
+  { id: "coach", label: "Coach", icon: BotMessageSquare },
+  { id: "community", label: "Collective", icon: MessageSquare },
+  { id: "profile", label: "Settings", icon: Settings },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>("calendar");
   const { user, signOut } = useAuth();
   const [firstName, setFirstName] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     if (!user) return;
-    supabase
+    void supabase
       .from("profiles")
       .select("first_name")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => setFirstName(data?.first_name || null));
 
-    supabase
+    void supabase
       .from("ritual_logs")
       .select("logged_date, completed")
       .eq("user_id", user.id)
       .eq("completed", true)
       .order("logged_date", { ascending: false })
-      .limit(200)
+      .limit(1000)
       .then(({ data }) => {
-        if (!data) return;
-        const uniqueDates = [...new Set(data.map((l) => l.logged_date))].sort().reverse();
-        let s = 0;
-        for (let i = 0; i < uniqueDates.length; i++) {
-          const expected = new Date();
-          expected.setDate(expected.getDate() - i);
-          if (uniqueDates[i] === expected.toISOString().slice(0, 10)) s++;
-          else break;
+        const dates = new Set((data ?? []).map((entry) => entry.logged_date));
+        const toLocalKey = (value: Date) =>
+          `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+        const cursor = new Date();
+        if (!dates.has(toLocalKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+        let count = 0;
+        while (dates.has(toLocalKey(cursor))) {
+          count += 1;
+          cursor.setDate(cursor.getDate() - 1);
         }
-        setStreak(s);
+        setStreak(count);
       });
   }, [user]);
 
@@ -71,96 +83,114 @@ const Dashboard = () => {
     }
   };
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
-  };
+  const greeting = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 17 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border">
-        <div className="container mx-auto flex items-center justify-between px-6 py-3">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logoMark} alt="OmniaVital logo" width={32} height={32} className="w-8 h-8 object-contain" />
-            <span className="text-sm font-bold tracking-[0.15em] uppercase text-foreground">OmniaVital</span>
-          </Link>
+    <div className="min-h-screen bg-background md:grid md:grid-cols-[232px_minmax(0,1fr)]">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[232px] flex-col border-r border-border bg-sidebar md:flex">
+        <Link to="/" className="flex h-20 items-center gap-3 border-b border-sidebar-border px-6" aria-label="OmniaVital home">
+          <img src={logoMark} alt="" width={32} height={32} className="h-8 w-8 object-contain" />
+          <span className="text-sm font-semibold uppercase tracking-[0.16em] text-sidebar-foreground">OmniaVital</span>
+        </Link>
 
-          <div className="flex items-center gap-5">
-            {streak > 0 && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Flame size={14} className="text-orange-400" />
-                <span className="font-semibold text-foreground">{streak}</span>
-                <span>day streak</span>
-              </div>
-            )}
-            <Link
-              to="/#ritual"
-              className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors tracking-widest uppercase"
-            >
-              <Store size={14} />
-              Shop
-            </Link>
-            <button
-              onClick={signOut}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors tracking-widest uppercase"
-            >
-              <LogOut size={14} />
-              Sign Out
-            </button>
-          </div>
+        <div className="px-4 pb-3 pt-6">
+          <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Member space</p>
         </div>
+        <nav className="flex-1 space-y-1 px-3" aria-label="Dashboard">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <Button
+                key={tab.id}
+                variant="ghost"
+                onClick={() => setActiveTab(tab.id)}
+                aria-current={active ? "page" : undefined}
+                className={`h-11 w-full justify-start px-3 text-sm ${
+                  active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                }`}
+              >
+                <Icon className={active ? "text-sidebar-primary" : ""} />
+                {tab.label}
+                {tab.id === "calendar" && streak > 0 && (
+                  <span className="ml-auto flex items-center gap-1 text-xs text-sidebar-primary"><Flame className="h-3.5 w-3.5" />{streak}</span>
+                )}
+              </Button>
+            );
+          })}
+        </nav>
+
+        <div className="border-t border-sidebar-border p-3">
+          <Button asChild variant="ghost" className="mb-1 h-10 w-full justify-start px-3 text-muted-foreground">
+            <Link to="/#ritual"><ShoppingBag /> Shop products</Link>
+          </Button>
+          <Button variant="ghost" onClick={signOut} className="h-10 w-full justify-start px-3 text-muted-foreground">
+            <LogOut /> Sign out
+          </Button>
+        </div>
+      </aside>
+
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-xl md:hidden">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="OmniaVital home">
+          <img src={logoMark} alt="" width={28} height={28} className="h-7 w-7 object-contain" />
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">OmniaVital</span>
+        </Link>
+        <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out"><LogOut /></Button>
       </header>
 
-      <div className="pt-20 pb-16">
-        <div className="container mx-auto px-4 mb-6">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-foreground">
-            <h1 className="text-2xl font-bold tracking-wide">
-              {greeting()}{firstName ? `, ${firstName}` : ""}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {streak > 0
-                ? `You're on a ${streak}-day streak. Keep building.`
-                : "Start your ritual today to build momentum."}
-            </p>
-          </motion.div>
-        </div>
-
-        <div className="container mx-auto px-4 mb-8">
-          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-none">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium tracking-widest uppercase whitespace-nowrap transition-all duration-300 ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {tab.label}
-                </button>
-              );
-            })}
+      <main className="min-w-0 md:col-start-2">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-7 sm:px-6 md:px-8 md:pb-12 md:pt-9">
+          <div className="mb-8 flex items-end justify-between gap-4">
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                {greeting}{firstName ? `, ${firstName}` : ""}
+              </p>
+              <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">
+                {activeTab === "calendar" ? "Your daily record" : tabs.find((tab) => tab.id === activeTab)?.label}
+              </h1>
+            </div>
+            {activeTab !== "calendar" && streak > 0 && (
+              <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+                <Flame className="h-4 w-4 text-primary" />
+                <strong className="font-semibold text-foreground">{streak}</strong> day streak
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="container mx-auto px-4">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            {renderTab()}
-          </motion.div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            >
+              {renderTab()}
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
+      </main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Dashboard">
+        {tabs.filter((tab) => tab.id !== "community").map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.id;
+          return (
+            <Button
+              key={tab.id}
+              variant="ghost"
+              onClick={() => setActiveTab(tab.id)}
+              aria-current={active ? "page" : undefined}
+              className={`h-16 flex-col gap-1 rounded-none px-1 text-[10px] ${active ? "text-primary" : "text-muted-foreground"}`}
+            >
+              <Icon className="h-5 w-5" />
+              {tab.label}
+            </Button>
+          );
+        })}
+      </nav>
     </div>
   );
 };

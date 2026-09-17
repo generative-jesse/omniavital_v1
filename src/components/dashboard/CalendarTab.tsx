@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, Check, ChevronRight, Circle, Flame, Loader2, Package, Sparkles } from "lucide-react";
+import { Check, ChevronRight, Circle, Flame, Loader2, Package, Sparkles } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -148,13 +148,12 @@ const CalendarTab = () => {
 
   return (
     <section aria-labelledby="calendar-heading">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">Daily log</p>
-          <h2 id="calendar-heading" className="text-2xl font-semibold text-foreground">Ritual calendar</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Track intake, nutrition, mood, and notes in one place.</p>
+          <h2 id="calendar-heading" className="text-xl font-semibold text-foreground">Logbook</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Rituals, nutrition, mood, and journal entries by day.</p>
         </div>
-        <div className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
+        <div className="flex w-fit items-center gap-2 rounded-md bg-secondary px-3 py-2">
           <Flame className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">{streak} day streak</span>
         </div>
@@ -167,8 +166,8 @@ const CalendarTab = () => {
         </div>
       )}
 
-      <div className="grid items-start gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <aside className="space-y-4 xl:sticky xl:top-6">
+      <div className="grid items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <aside className="space-y-4 lg:sticky lg:top-6">
           <div className="relative rounded-md border border-border bg-card p-3 sm:p-4">
             {loading && <Loader2 className="absolute right-16 top-7 h-4 w-4 animate-spin text-muted-foreground" />}
             <Calendar
@@ -180,10 +179,10 @@ const CalendarTab = () => {
               className="w-full p-0"
               modifiers={{ activity: activityDates }}
               modifiersClassNames={{
-                activity: "relative font-medium after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
+                activity: "relative font-medium after:absolute after:bottom-0.5 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
               }}
               classNames={{
-                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground after:bg-primary-foreground",
+                day_selected: "bg-accent text-accent-foreground ring-1 ring-primary hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground after:bg-primary",
               }}
             />
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
@@ -204,7 +203,7 @@ const CalendarTab = () => {
                 return (
                   <div key={slot.id} className="flex items-center justify-between gap-4">
                     <span className="truncate text-sm text-foreground">{product?.name ?? slot.label}</span>
-                    <span className={cn("shrink-0 text-xs font-semibold", remaining <= 5 ? "text-destructive" : "text-muted-foreground")}>{remaining} left</span>
+                    <span className={cn("shrink-0 text-xs font-semibold", remaining <= 5 ? "text-destructive" : "text-muted-foreground")}>{remaining} doses</span>
                   </div>
                 );
               })}
@@ -213,11 +212,11 @@ const CalendarTab = () => {
         </aside>
 
         <div className="min-w-0 space-y-6">
-          <div className="rounded-md border border-border bg-card">
-            <div className="flex flex-col gap-2 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="overflow-hidden rounded-md border border-border bg-card">
+            <div className="flex flex-col gap-2 border-b border-border bg-secondary/30 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
                 <p className="text-lg font-semibold text-foreground">{date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
-                <p className="text-xs text-muted-foreground">{completedToday} of {ritualSlots.length} rituals taken · {otherActivity[selectedDate] ?? 0} wellness entries</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{completedToday} of {ritualSlots.length} rituals taken · {otherActivity[selectedDate] ?? 0} other entries</p>
               </div>
               {completedToday === ritualSlots.length && (
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-primary"><Sparkles className="h-3.5 w-3.5" /> Day complete</span>
@@ -240,13 +239,13 @@ const CalendarTab = () => {
                       disabled={busy === slot.id || !product || !canLog}
                       aria-pressed={completed}
                       aria-label={`${completed ? "Undo" : "Log"} ${slot.label}`}
-                      className={cn("h-10 w-10 shrink-0 rounded-md", completed && "border-primary bg-primary/10 text-primary")}
+                       className={cn("h-10 w-10 shrink-0 rounded-md", completed && "border-primary bg-primary text-primary-foreground hover:bg-primary/90")}
                     >
                       {busy === slot.id ? <Loader2 className="animate-spin" /> : completed ? <Check /> : <Circle />}
                     </Button>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">{product?.name ?? slot.label}</p>
-                      <p className="truncate text-xs text-muted-foreground">{completed ? "Taken and saved" : remaining > 0 ? slot.description : "No inventory — add a bottle to continue"}</p>
+                       <p className="truncate text-xs text-muted-foreground">{completed ? `Taken${log?.logged_at ? ` at ${new Date(log.logged_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}` : remaining > 0 ? slot.description : "No inventory — add a bottle to continue"}</p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className={cn("text-sm font-semibold", remaining <= 5 ? "text-destructive" : "text-foreground")}>{remaining}</p>
