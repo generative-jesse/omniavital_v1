@@ -14,7 +14,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col",
-        month: "space-y-5 w-full",
+        month: "space-y-4 w-full",
         caption: "flex justify-center relative items-center h-10",
         caption_label: "text-sm font-semibold text-foreground",
         nav: "space-x-1 flex items-center",
@@ -28,12 +28,12 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         head_row: "grid grid-cols-7",
         head_cell: "text-muted-foreground font-medium text-[0.65rem] uppercase h-7 flex items-center justify-center",
         row: "grid grid-cols-7 w-full mt-1",
-        cell: "h-11 sm:h-12 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-        day: cn(buttonVariants({ variant: "ghost" }), "h-10 w-10 sm:h-11 sm:w-11 mx-auto p-0 font-normal rounded-md aria-selected:opacity-100"),
+        cell: "h-10 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 mx-auto p-0 font-normal rounded-md aria-selected:opacity-100"),
         day_range_end: "day-range-end",
         day_selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "ring-1 ring-primary/50 text-foreground",
+        day_today: "font-semibold text-primary",
         day_outside:
           "day-outside text-muted-foreground opacity-25 aria-selected:bg-secondary aria-selected:text-muted-foreground aria-selected:opacity-30",
         day_disabled: "text-muted-foreground opacity-50",
