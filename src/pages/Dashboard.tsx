@@ -172,7 +172,7 @@ const Dashboard = () => {
         </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Dashboard">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Dashboard">
         {tabs.filter((tab) => tab.id !== "community").map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
