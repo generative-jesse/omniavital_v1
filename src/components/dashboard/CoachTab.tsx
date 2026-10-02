@@ -136,7 +136,7 @@ const CoachTab = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)]">
+    <div className="flex min-w-0 flex-col h-[calc(100dvh-17rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-12rem)]">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">

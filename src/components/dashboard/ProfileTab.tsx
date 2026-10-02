@@ -48,22 +48,13 @@ const ProfileTab = () => {
   if (loading) return <div className="text-muted-foreground text-sm">Loading profile...</div>;
 
   return (
-    <div className="max-w-lg">
-      <h2 className="text-xl font-bold tracking-wide text-foreground mb-1">Your Profile</h2>
-      <p className="text-sm text-muted-foreground mb-8">Manage your OmniaVital identity</p>
+    <div className="w-full">
+      <h2 className="text-base font-semibold text-foreground mb-1">Profile</h2>
+      <p className="text-sm text-muted-foreground mb-6">How you appear in The Collective</p>
 
       <div className="space-y-5">
         <div>
-          <label className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-1.5 block">
-            Email
-          </label>
-          <Input value={user?.email || ""} disabled className="bg-secondary/50 border-border opacity-60" />
-        </div>
-
-        <div>
-          <label className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-1.5 block">
-            First Name
-          </label>
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">First name</label>
           <Input
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
@@ -73,8 +64,8 @@ const ProfileTab = () => {
         </div>
 
         <div>
-          <label className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-1.5 block">
-            <span className="flex items-center gap-1.5"><AtSign size={12} /> OV Tag</span>
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+            <span className="flex items-center gap-1.5"><AtSign size={12} /> OV tag</span>
           </label>
           <Input
             value={ovTag}
@@ -84,6 +75,11 @@ const ProfileTab = () => {
             maxLength={20}
           />
           <p className="text-[11px] text-muted-foreground mt-1">Your public community handle</p>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Email</label>
+          <Input value={user?.email || ""} disabled className="bg-secondary/50 border-border opacity-60" />
         </div>
 
         <button

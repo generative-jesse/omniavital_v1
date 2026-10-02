@@ -18,25 +18,24 @@ import { supabase } from "@/integrations/supabase/client";
 import logoMark from "@/assets/logo-mark.png";
 
 import OverviewTab from "@/components/dashboard/OverviewTab";
-import ProfileTab from "@/components/dashboard/ProfileTab";
-import PurchasesTab from "@/components/dashboard/PurchasesTab";
+import MeTab from "@/components/dashboard/MeTab";
 import CalendarTab from "@/components/dashboard/CalendarTab";
 import CommunityTab from "@/components/dashboard/CommunityTab";
 import CoachTab from "@/components/dashboard/CoachTab";
+import { UserRound } from "lucide-react";
 
 const tabs = [
   { id: "overview", label: "Today", icon: LayoutDashboard },
   { id: "calendar", label: "Logbook", icon: CalendarDays },
-  { id: "purchases", label: "Supply", icon: Package },
   { id: "coach", label: "Coach", icon: BotMessageSquare },
   { id: "community", label: "Collective", icon: MessageSquare },
-  { id: "profile", label: "Settings", icon: Settings },
+  { id: "me", label: "Me", icon: UserRound },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState<TabId>("calendar");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
   const { user, signOut } = useAuth();
   const [firstName, setFirstName] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
@@ -75,8 +74,7 @@ const Dashboard = () => {
   const renderTab = () => {
     switch (activeTab) {
       case "overview": return <OverviewTab streak={streak} onNavigate={setActiveTab} />;
-      case "profile": return <ProfileTab />;
-      case "purchases": return <PurchasesTab />;
+      case "me": return <MeTab />;
       case "calendar": return <CalendarTab />;
       case "community": return <CommunityTab />;
       case "coach": return <CoachTab />;
@@ -173,7 +171,7 @@ const Dashboard = () => {
         </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Dashboard">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Dashboard">
         {tabs.filter((tab) => tab.id !== "community").map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
