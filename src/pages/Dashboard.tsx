@@ -74,8 +74,7 @@ const Dashboard = () => {
   const renderTab = () => {
     switch (activeTab) {
       case "overview": return <OverviewTab streak={streak} onNavigate={setActiveTab} />;
-      case "profile": return <ProfileTab />;
-      case "purchases": return <PurchasesTab />;
+      case "me": return <MeTab />;
       case "calendar": return <CalendarTab />;
       case "community": return <CommunityTab />;
       case "coach": return <CoachTab />;
