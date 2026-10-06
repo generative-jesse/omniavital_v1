@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Check, ChevronRight, Circle, Flame, Loader2, Package, Sparkles } from "lucide-react";
+import { Check, Flame, Loader2, Sparkles } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateInventory, type InventoryItem } from "@/lib/inventory";
-import { cn } from "@/lib/utils";
 import DayLogPanel from "./DayLogPanel";
+import LogbookTrends from "./LogbookTrends";
 
 const ritualSlots = [
   { id: "morning", label: "Morning Protocol", description: "Daily energy and resilience" },
@@ -31,6 +29,12 @@ interface Product {
   slug: string;
 }
 
+interface MoodTrendLog {
+  logged_date: string;
+  score: number | null;
+  energy: number | null;
+}
+
 const toKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
@@ -46,29 +50,33 @@ const CalendarTab = () => {
   const [monthLogs, setMonthLogs] = useState<RitualLog[]>([]);
   const [allLogs, setAllLogs] = useState<RitualLog[]>([]);
   const [otherActivity, setOtherActivity] = useState<Record<string, number>>({});
+  const [moodTrends, setMoodTrends] = useState<MoodTrendLog[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
-  const [inventory, setInventory] = useState<Record<string, InventoryItem>>({});
-  const [busy, setBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const monthStart = toKey(new Date(month.getFullYear(), month.getMonth(), 1));
   const monthEnd = toKey(new Date(month.getFullYear(), month.getMonth() + 1, 0));
+  const trendStartDate = new Date();
+  trendStartDate.setDate(trendStartDate.getDate() - 27);
+  const trendStart = toKey(trendStartDate);
+  const today = toKey(new Date());
+  const queryStart = monthStart < trendStart ? monthStart : trendStart;
+  const queryEnd = monthEnd > today ? monthEnd : today;
 
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
-    const [productResult, ritualResult, dietResult, moodResult, journalResult, purchaseResult] = await Promise.all([
+    const [productResult, ritualResult, dietResult, moodResult, journalResult] = await Promise.all([
       supabase.from("products").select("id, category, name, slug"),
       supabase.from("ritual_logs").select("id, logged_date, created_at, completed, product_id, notes").eq("user_id", user.id).order("logged_date", { ascending: false }).limit(1000),
-      supabase.from("diet_logs").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
-      supabase.from("mood_logs").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
-      supabase.from("journal_entries").select("logged_date").eq("user_id", user.id).gte("logged_date", monthStart).lte("logged_date", monthEnd),
-      supabase.from("purchases").select("product_id, quantity").eq("user_id", user.id).eq("status", "active"),
+      supabase.from("diet_logs").select("logged_date").eq("user_id", user.id).gte("logged_date", queryStart).lte("logged_date", queryEnd),
+      supabase.from("mood_logs").select("logged_date, score, energy").eq("user_id", user.id).gte("logged_date", queryStart).lte("logged_date", queryEnd).order("logged_date"),
+      supabase.from("journal_entries").select("logged_date").eq("user_id", user.id).gte("logged_date", queryStart).lte("logged_date", queryEnd),
     ]);
 
-    const firstError = [productResult, ritualResult, dietResult, moodResult, journalResult, purchaseResult].find((result) => result.error)?.error;
+    const firstError = [productResult, ritualResult, dietResult, moodResult, journalResult].find((result) => result.error)?.error;
     if (firstError) {
       setError("Your activity could not be loaded. Please try again.");
       setLoading(false);
@@ -87,9 +95,9 @@ const CalendarTab = () => {
     setAllLogs(rituals);
     setMonthLogs(rituals.filter((log) => log.logged_date >= monthStart && log.logged_date <= monthEnd));
     setOtherActivity(activity);
-    setInventory(calculateInventory(purchaseResult.data ?? [], rituals));
+    setMoodTrends((moodResult.data as MoodTrendLog[]) ?? []);
     setLoading(false);
-  }, [monthEnd, monthStart, user]);
+  }, [monthEnd, monthStart, queryEnd, queryStart, user]);
 
   useEffect(() => { void loadData(); }, [loadData]);
 
@@ -122,30 +130,6 @@ const CalendarTab = () => {
     return value;
   }, [allLogs]);
 
-  const toggleRitual = async (category: string) => {
-    if (!user) return;
-    const product = products[category];
-    if (!product) return;
-    const existing = dayLogs.find((log) => log.product_id === product.id);
-    const nextCompleted = !existing?.completed;
-    const remaining = inventory[product.id]?.remaining ?? 0;
-    if (nextCompleted && remaining <= 0) return;
-
-    setBusy(category);
-    const result = existing
-      ? await supabase.from("ritual_logs").update({ completed: nextCompleted }).eq("id", existing.id)
-      : await supabase.from("ritual_logs").upsert(
-          { user_id: user.id, product_id: product.id, logged_date: selectedDate, completed: true },
-          { onConflict: "user_id,product_id,logged_date" },
-        );
-    setBusy(null);
-    if (result.error) {
-      setError("That intake was not saved. Please try again.");
-      return;
-    }
-    await loadData();
-  };
-
   return (
     <section aria-labelledby="calendar-heading">
       <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -166,8 +150,19 @@ const CalendarTab = () => {
         </div>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="space-y-4 lg:sticky lg:top-6">
+      <div className="space-y-8">
+        <DayLogPanel dateStr={selectedDate} onChanged={loadData} />
+
+        <LogbookTrends moodLogs={moodTrends} activityByDay={otherActivity} ritualActivityByDay={countsByDay} />
+
+        <section aria-labelledby="history-heading" className="space-y-4">
+          <div>
+            <h3 id="history-heading" className="text-base font-semibold text-foreground">Daily history</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Choose a day to review everything that was recorded.</p>
+          </div>
+
+          <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <aside className="min-w-0 lg:sticky lg:top-6">
           <div className="relative rounded-md border border-border bg-card p-3 sm:p-4">
             {loading && <Loader2 className="absolute right-16 top-7 h-4 w-4 animate-spin text-muted-foreground" />}
             <Calendar
@@ -191,24 +186,6 @@ const CalendarTab = () => {
             </div>
           </div>
 
-          <div className="rounded-md border border-border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Inventory</span>
-              <Package className="h-4 w-4 text-primary" />
-            </div>
-            <div className="space-y-3">
-              {ritualSlots.map((slot) => {
-                const product = products[slot.id];
-                const remaining = product ? inventory[product.id]?.remaining ?? 0 : 0;
-                return (
-                  <div key={slot.id} className="flex items-center justify-between gap-4">
-                    <span className="truncate text-sm text-foreground">{product?.name ?? slot.label}</span>
-                    <span className={cn("shrink-0 text-xs font-semibold", remaining <= 5 ? "text-destructive" : "text-muted-foreground")}>{remaining} doses</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </aside>
 
         <div className="min-w-0 space-y-6">
@@ -228,42 +205,24 @@ const CalendarTab = () => {
                 const product = products[slot.id];
                 const log = dayLogs.find((item) => item.product_id === product?.id);
                 const completed = log?.completed ?? false;
-                const remaining = product ? inventory[product.id]?.remaining ?? 0 : 0;
-                const canLog = completed || remaining > 0;
                 return (
                   <div key={slot.id} className="flex items-center gap-3 px-4 py-4 sm:px-5">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => void toggleRitual(slot.id)}
-                      disabled={busy === slot.id || !product || !canLog}
-                      aria-pressed={completed}
-                      aria-label={`${completed ? "Undo" : "Log"} ${slot.label}`}
-                       className={cn("h-10 w-10 shrink-0 rounded-md", completed && "border-primary bg-primary text-primary-foreground hover:bg-primary/90")}
-                    >
-                      {busy === slot.id ? <Loader2 className="animate-spin" /> : completed ? <Check /> : <Circle />}
-                    </Button>
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${completed ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                      <Check className={`h-4 w-4 ${completed ? "opacity-100" : "opacity-25"}`} />
+                    </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">{product?.name ?? slot.label}</p>
-                       <p className="truncate text-xs text-muted-foreground">{completed ? `Taken${log?.created_at ? ` at ${new Date(log.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}` : remaining > 0 ? slot.description : "No inventory — add a bottle to continue"}</p>
+                       <p className="text-xs text-muted-foreground">{completed ? `Taken${log?.created_at ? ` at ${new Date(log.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}` : "Not recorded"}</p>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <p className={cn("text-sm font-semibold", remaining <= 5 ? "text-destructive" : "text-foreground")}>{remaining}</p>
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">servings left</p>
-                    </div>
-                    {!canLog && product && (
-                      <Button asChild variant="ghost" size="icon" aria-label={`Buy ${product.name}`}>
-                        <Link to={`/product/${product.slug}`}><ChevronRight /></Link>
-                      </Button>
-                    )}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          <DayLogPanel dateStr={selectedDate} onChanged={loadData} />
         </div>
+          </div>
+        </section>
       </div>
     </section>
   );
